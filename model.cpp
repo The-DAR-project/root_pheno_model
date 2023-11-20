@@ -94,7 +94,7 @@ void model() {
     gr->SetMarkerColor(4); 
     gr->SetMarkerSize(0.4); 
     gr->SetLineWidth(4);
-    gr->SetLineColor(4); 
+    gr->SetLineColor(4);
     gr->Draw("same");
 
     TF1 *fexp = new TF1("fexp","[0]*exp(x*[1])", Xrange[0], Xrange[1]);
