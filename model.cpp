@@ -51,7 +51,7 @@ void model() {
 
     TH2F *hfr;
 
-    // First heating chart
+    // Heating chart
     mc(2, 1.5);
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
@@ -70,7 +70,7 @@ void model() {
     gr->SetMarkerStyle(20); gr->SetMarkerColor(2); gr->SetMarkerSize(0.4); gr->SetLineWidth(4); gr->SetLineColor(2); 
     gr->Draw();
 
-    // First cooling chart
+    // Cooling chart
     mc(3,1.5);
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
@@ -93,13 +93,14 @@ void model() {
     gr->SetMarkerStyle(20); 
     gr->SetMarkerColor(4); 
     gr->SetMarkerSize(0.4); 
-    gr->SetLineWidth(4); 
+    gr->SetLineWidth(4);
     gr->SetLineColor(4); 
     gr->Draw("same");
 
     TF1 *fexp = new TF1("fexp","[0]*exp(x*[1])", Xrange[0], Xrange[1]);
     fexp->SetParameters(3.85653, -6.28243e-05);
     fexp->SetLineWidth(3);
+    fexp->SetLineColor(2);
     //fexp->Draw("same");
     gr->Fit("fexp"," ","R", 5000, 30000);
 
