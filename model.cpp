@@ -47,7 +47,7 @@ void model() {
 
     //======== SetUp =============
     double TemperError = 1.0;  // Estimate, needs more attention
-    int rebin = 30;           // rebinning 100 for cooling 30 for heating
+    int rebin[2] = {30, 100};          // rebinning 100 for cooling 30 for heating
     //============================
 
     ifstream myfile(filename);
@@ -71,7 +71,7 @@ void model() {
     cout << "Starting to read!" << endl;
     int count = 0;
     int countLines = 0;
-    double sumTemp = 0, sumTime = 0;
+    double sumTemp = 0, sumTime = 0, averTemp = 0, averTime = 0;
     while(!myfile.eof()) {
         //myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
         myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
@@ -83,24 +83,34 @@ void model() {
             chartCooling->SetPointError(chartCooling->GetN()-1, 0, TemperError);
         }
 
-        if(countLines<rebin) {
-            sumTemp += tvd02; // - tempAmbHeating;
-            sumTime += clock; //*(tvd02 - tempAmbHeating);
-            countLines++;
-        } else {
-            double averTemp = sumTemp/rebin;
-            double averTime = sumTime/rebin;  // /sumTemp; //weighted average
-
-            if(count <= heatingEndIndex) {
+        if(count <= heatingEndIndex) {
+            if(countLines<rebin[0]) {
+                sumTemp += tvd02; // - tempAmbHeating;
+                sumTime += clock; //*(tvd02 - tempAmbHeating);
+                countLines++;
+            } else {
+                averTemp = sumTemp/rebin[0];
+                averTime = sumTime/rebin[0];
                 chartHeatingReb->AddPoint(averTime, averTemp - tempAmbHeating);
                 chartHeatingReb->SetPointError(chartHeatingReb->GetN()-1, 0, 2*TemperError);
-            } else if(count > coolingStartIndex && count < 10000) {
+                countLines = 0;
+                sumTemp = 0;
+                sumTime = 0;
+            }
+        } else if(count > coolingStartIndex && count < 10000) {
+            if(countLines<rebin[1]) {
+                sumTemp += tvd02; // - tempAmbHeating;
+                sumTime += clock; //*(tvd02 - tempAmbHeating);
+                countLines++;
+            } else {
+                averTemp = sumTemp/rebin[1];
+                averTime = sumTime/rebin[1];
                 chartCoolingReb->AddPoint(averTime - coolingStartTime, averTemp - tempAmbCooling);
                 chartCoolingReb->SetPointError(chartCoolingReb->GetN()-1, 0, TemperError);
-            }
-            countLines = 0;
-            sumTemp = 0;
-            sumTime = 0;
+                countLines = 0;
+                sumTemp = 0;
+                sumTime = 0;
+            }   
         }
 
         count++;
@@ -177,7 +187,7 @@ void model() {
     gr->Fit("fheat"," ","R", fitRange[0], fitRange[1]);
     fHeat->SetParameter(4,0);
     fHeat->SetLineStyle(2); fHeat->Draw("same");
-    return;
+    //return;
 
 
     // Cooling chart =======================================================
