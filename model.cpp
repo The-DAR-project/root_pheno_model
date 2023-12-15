@@ -78,12 +78,7 @@ void model() {
 
         if(count <= heatingEndIndex) {
             chartHeating->AddPoint(clock, tvd02 - tempAmbHeating);
-        } else if(count > coolingStartIndex && count < 10000) {
-            chartCooling->AddPoint(clock - coolingStartTime, tvd02 - tempAmbCooling);
-            chartCooling->SetPointError(chartCooling->GetN()-1, 0, TemperError);
-        }
-
-        if(count <= heatingEndIndex) {
+            // Rebining
             if(countLines<rebin[0]) {
                 sumTemp += tvd02; // - tempAmbHeating;
                 sumTime += clock; //*(tvd02 - tempAmbHeating);
@@ -98,6 +93,9 @@ void model() {
                 sumTime = 0;
             }
         } else if(count > coolingStartIndex && count < 10000) {
+            chartCooling->AddPoint(clock - coolingStartTime, tvd02 - tempAmbCooling);
+            chartCooling->SetPointError(chartCooling->GetN()-1, 0, TemperError);
+            // Rebining
             if(countLines<rebin[1]) {
                 sumTemp += tvd02; // - tempAmbHeating;
                 sumTime += clock; //*(tvd02 - tempAmbHeating);
@@ -112,7 +110,6 @@ void model() {
                 sumTime = 0;
             }   
         }
-
         count++;
     }
 
