@@ -65,6 +65,7 @@ void model() {
     TGraphErrors *chartCooling = new TGraphErrors();
     TGraphErrors *chartHeatingReb = new TGraphErrors();
     TGraphErrors *chartCoolingReb = new TGraphErrors();
+    TGraphErrors *chartWin = new TGraphErrors();
     TGraph *gr;
 
 
@@ -75,6 +76,10 @@ void model() {
     while(!myfile.eof()) {
         //myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
         myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
+
+        // Chart W_in
+        chartWin->AddPoint(clock, pwr);
+        cout << clock << " " << pwr << endl;
 
         if(count <= heatingEndIndex) {
             chartHeating->AddPoint(clock, tvd02 - tempAmbHeating);
@@ -110,6 +115,7 @@ void model() {
                 sumTime = 0;
             }   
         }
+
         count++;
     }
 
@@ -244,4 +250,25 @@ void model() {
     l = new TLine(fitRange[1], Yrange[0], fitRange[1], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
 
     pPrint("../../figs/cooling","c3");
+
+    // Cumulative W_in =======================================================
+
+    mc(4,1.5);
+    gStyle->SetOptStat(0);
+    gStyle->SetOptTitle(0);
+    gStyle->SetMarkerSize(1.6);
+    mpad->SetLogx(0);
+    mpad->SetGridx(0);
+    mpad->SetLogy(0);
+    mpad->SetGridy(0);
+    gPad->SetLeftMargin(0.17);
+
+    gr = chartWin;
+
+    //-----------------
+    gr->SetMarkerStyle(33); 
+    gr->SetMarkerColor(4); 
+    gr->SetMarkerSize(1.2); 
+    gr->SetLineColor(2);
+    gr->Draw();
 }
