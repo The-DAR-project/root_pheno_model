@@ -1,3 +1,30 @@
+
+double sHeat(double *xvar, double *par){
+
+    double time = xvar[0];
+    double timeWin[2] = {par[0], par[1]};
+    double timeStep = (timeWin[1]-timeWin[0])/1000.;
+    
+    double timeOffset = par[2];
+    double kin        = par[3];
+    double Qloss      = par[4];
+    double MeanT      = par[5];
+
+    double Temperature = 0;
+    double tempHeat=0, tempLoss=0;
+    for(int it=timeWin[0]; (it<time && it<timeWin[1]); it+=timeStep){
+        Temperature += tempHeat - tempLoss;
+        tempHeat = kin*timeStep;
+        tempLoss = Qloss*( exp(Temperature/MeanT) - 1 ) * timeStep;
+        //cout<< Temperature/MeanT <<" "<< exp(Temperature/MeanT) <<" "<< 1/MeanT <<endl; 
+        //cout<< "it="<< it << " time=" << time << " Heat = "<< tempHeat <<" tempLoss = " << tempLoss << " Temp=" << Temperature <<endl; 
+        //if(it>5) exit(0);
+    }
+    return Temperature;
+}
+
+
+
 void model() {
     // Measurement 503
     // double tempAmbHeating = 20.69;
@@ -15,6 +42,10 @@ void model() {
     int heatingEndIndex = 1449;
     TString filename = "measurement_509.csv";
 
+    //======== SetUp =============
+    double TemperError = 1.0;  // Estimate, needs more attention
+    int rebin = 30;           // rebinning 100 for cooling 30 for heating
+    //============================
 
     ifstream myfile(filename);
     if(myfile.fail()) {
@@ -27,13 +58,17 @@ void model() {
 
     double pwr, tvd02, tvd06, tvd03, pt1000, clock;
 
-    TGraph *chartHeating = new TGraph();
-    TGraph *chartCooling = new TGraph();
+    TGraphErrors *chartHeating = new TGraphErrors();
+    TGraphErrors *chartCooling = new TGraphErrors();
+    TGraphErrors *chartHeatingReb = new TGraphErrors();
+    TGraphErrors *chartCoolingReb = new TGraphErrors();
     TGraph *gr;
 
 
     cout << "Starting to read!" << endl;
     int count = 0;
+    int countLines = 0;
+    double sumTemp = 0, sumTime = 0;
     while(!myfile.eof()) {
         //myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
         myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
@@ -42,6 +77,27 @@ void model() {
             chartHeating->AddPoint(clock, tvd02 - tempAmbHeating);
         } else if(count > coolingStartIndex && count < 10000) {
             chartCooling->AddPoint(clock - coolingStartTime, tvd02 - tempAmbCooling);
+            chartCooling->SetPointError(chartCooling->GetN()-1, 0, TemperError);
+        }
+
+        if(countLines<rebin) {
+            sumTemp += tvd02; // - tempAmbHeating;
+            sumTime += clock; //*(tvd02 - tempAmbHeating);
+            countLines++;
+        } else {
+            double averTemp = sumTemp/rebin;
+            double averTime = sumTime/rebin;  // /sumTemp; //weighted average
+
+            if(count <= heatingEndIndex) {
+                chartHeatingReb->AddPoint(averTime, averTemp - tempAmbHeating);
+                chartHeatingReb->SetPointError(chartHeatingReb->GetN()-1, 0, 2*TemperError);
+            } else if(count > coolingStartIndex && count < 10000) {
+                chartCoolingReb->AddPoint(averTime - coolingStartTime, averTemp - tempAmbCooling);
+                chartCoolingReb->SetPointError(chartCoolingReb->GetN()-1, 0, TemperError);
+            }
+            countLines = 0;
+            sumTemp = 0;
+            sumTime = 0;
         }
 
         count++;
@@ -50,8 +106,13 @@ void model() {
     cout << "Read count: " << count << endl;
 
     TH2F *hfr;
+    double Xrange[2], Yrange[2];
+    double fitRange[2]={5000, 30000};
 
-    // Heating chart
+
+    // Heating chart ======================================================
+    // rebin 30
+
     mc(2, 1.5);
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
@@ -62,46 +123,115 @@ void model() {
     mpad->SetGridy(0);
     gPad->SetLeftMargin(0.17);
 
-    hfr = new TH2F("hfr"," ", 10, 0, 20, 10, 0, 100);
-    hset( *hfr, "Time [s]","Temp [deg]");
+    gr = chartHeatingReb;
+    Xrange[0] = 0*gr->GetXaxis()->GetXmin();
+    Xrange[1] = gr->GetXaxis()->GetXmax();
+    Yrange[0] = gr->GetYaxis()->GetXmin();
+    Yrange[1] = gr->GetYaxis()->GetXmax();
+    //cout << Xrange[0]  <<" "<< Xrange[1] <<" "<< Yrange[0] <<" "<< Yrange[1] <<endl; 
+    //return;
+
+    hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]); 
+    hset( *hfr, "Time [hour:min]","Temp [deg]");
+    //hfr->GetXaxis()->SetTimeDisplay(1);
+    //hfr->GetXaxis()->SetTimeFormat("%H:%M");
     hfr->Draw();
 
-    gr=chartHeating;
-    gr->SetMarkerStyle(20); gr->SetMarkerColor(2); gr->SetMarkerSize(0.4); gr->SetLineWidth(4); gr->SetLineColor(2); 
-    gr->Draw();
+    gr->SetMarkerStyle(33); 
+    gr->SetMarkerColor(4); 
+    gr->SetMarkerSize(1.2); 
+    gr->Draw("PZ");
 
-    // Cooling chart
+    TF1 *fHeat = new TF1("fheat", sHeat, 150, Xrange[1], 6);
+
+    fHeat->SetParameters(
+            Xrange[0], // 0 time interval to fit, FIXED
+            Xrange[1], // 1 FIXED
+            150,       // 2 time offset
+            2.29e-3,   // 3 kin (heating = kin*Pin]
+            2.07e-2,    // 4 Qloss
+            7.6e7      // 5 Spadova teplota
+            );
+    fHeat->SetParName(0,"timeR[0]");
+    fHeat->SetParName(1,"timeR[1]");
+    fHeat->SetParName(2,"timeOFST");
+    fHeat->SetParName(3,"kin");
+    fHeat->SetParName(4,"Qloss");
+    fHeat->SetParName(5,"MeanT");
+
+    fHeat->FixParameter(0, Xrange[0]);
+    fHeat->FixParameter(1, Xrange[1]);
+    fHeat->FixParameter(2, 150);
+    //fHeat->FixParameter(3, 4.2e-3);
+    //fHeat->FixParameter(4, 0);
+    
+    //fHeat->Draw("same"); return;
+
+    fitRange[0]=400;
+    fitRange[1]=7e3;
+    gr->Fit("fheat"," ","R", fitRange[0], fitRange[1]);
+    cout<< fHeat->GetParameter(2)/60. << " mins" <<endl; 
+    TF1 *flin = new TF1("flin", "[0]*(x-[1])",Xrange[0], Xrange[1]);
+    flin->SetParameters(fHeat->GetParameter(3), fHeat->GetParameter(2));
+    flin->SetLineStyle(2); flin->Draw("same");
+    //return;
+
+
+    // Cooling chart =======================================================
+    // rebin 100
+
     mc(3,1.5);
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
     gStyle->SetMarkerSize(1.6);
     mpad->SetLogx(0);
     mpad->SetGridx(0);
-    mpad->SetLogy(1);
+    mpad->SetLogy(0);
     mpad->SetGridy(0);
     gPad->SetLeftMargin(0.17);
 
-    gr=chartCooling;
+    gr = chartCoolingReb;
 
-    double Xrange[2] = {gr->GetXaxis()->GetXmin(), gr->GetXaxis()->GetXmax()};
-    double Yrange[2] = {gr->GetYaxis()->GetXmin(), gr->GetYaxis()->GetXmax()};
+    Xrange[0] = 0*gr->GetXaxis()->GetXmin();
+    Xrange[1] = gr->GetXaxis()->GetXmax();
+    Yrange[0] = gr->GetYaxis()->GetXmin();
+    Yrange[1] = gr->GetYaxis()->GetXmax();
 
-    hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]); 
-    hset( *hfr, "Time [s]","Temp [deg]");
-    hfr->Draw();
-
-    gr->SetMarkerStyle(20); 
-    gr->SetMarkerColor(4); 
-    gr->SetMarkerSize(0.4); 
-    gr->SetLineWidth(4);
-    gr->SetLineColor(4);
-    gr->Draw("same");
-
-    TF1 *fexp = new TF1("fexp","[0]*exp(x*[1])", Xrange[0], Xrange[1]);
-    fexp->SetParameters(3.85653, -6.28243e-05);
+    TF1 *fexp = new TF1("fexp","[0]*exp(-x*[1])", Xrange[0], Xrange[1]);
+    fexp->SetParameters(3.85653, 6.28243e-05);
     fexp->SetLineWidth(3);
     fexp->SetLineColor(2);
-    //fexp->Draw("same");
-    gr->Fit("fexp"," ","R", 5000, 30000);
+    fitRange[0]=5e3;
+    fitRange[1]=3e4;
 
+    hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]); 
+    hset( *hfr, "Time [hour:min]","Temp [deg]");
+    hfr->GetXaxis()->SetTimeDisplay(1);
+    hfr->GetXaxis()->SetTimeFormat("%H:%M");
+    hfr->Draw();
+
+    //-----------------
+    gr->SetMarkerStyle(33); 
+    gr->SetMarkerColor(4); 
+    gr->SetMarkerSize(1.2); 
+    //gr->SetLineColor(2);
+    gr->Fit("fexp"," ","R", fitRange[0], fitRange[1]);
+    fexp->Draw("same");
+
+    gr->Draw("PZ");
+
+    TLegend *leg;
+    leg = new TLegend(0.5,0.7,0.7,0.9,"Sauna - cooling","brNDC");
+    leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
+    leg->AddEntry(gr, "measurement","p");
+    leg->AddEntry(fexp, "expo. fit", "l");
+    leg->AddEntry((TObject*)0, Form("T_{0}=%2.1f #circC", fexp->GetParameter(0)),"");
+    leg->AddEntry((TObject*)0, Form("#LTt#GT=%4.0f min", 1/fexp->GetParameter(1)/60),"");
+    leg->Draw(); 
+
+    TLine *l;
+    l = new TLine(fitRange[0], Yrange[0], fitRange[0], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
+    l = new TLine(fitRange[1], Yrange[0], fitRange[1], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
+
+    pPrint("../../figs/cooling","c3");
 }
