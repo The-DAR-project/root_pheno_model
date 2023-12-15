@@ -1,4 +1,5 @@
 
+# sHeat function
 double sHeat(double *xvar, double *par){
 
     double time = xvar[0];
