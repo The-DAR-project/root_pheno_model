@@ -1,8 +1,6 @@
 
-# sHeat function
 double sHeat(double *xvar, double *par){
 
-    double time = xvar[0];
     double timeWin[2] = {par[0], par[1]};
     double timeStep = (timeWin[1]-timeWin[0])/1000.;
     
@@ -11,15 +9,19 @@ double sHeat(double *xvar, double *par){
     double Qloss      = par[4];
     double MeanT      = par[5];
 
+    double time = xvar[0]-timeOffset;
+
     double Temperature = 0;
     double tempHeat=0, tempLoss=0;
     for(int it=timeWin[0]; (it<time && it<timeWin[1]); it+=timeStep){
-        Temperature += tempHeat - tempLoss;
         tempHeat = kin*timeStep;
         tempLoss = Qloss*( exp(Temperature/MeanT) - 1 ) * timeStep;
-        //cout<< Temperature/MeanT <<" "<< exp(Temperature/MeanT) <<" "<< 1/MeanT <<endl; 
-        //cout<< "it="<< it << " time=" << time << " Heat = "<< tempHeat <<" tempLoss = " << tempLoss << " Temp=" << Temperature <<endl; 
-        //if(it>5) exit(0);
+        Temperature += tempHeat - tempLoss;
+        
+        //cout<< "it="<< it << " time=" << time <<endl; 
+        //cout<<"Heat = "<< tempHeat <<" tempLoss = " << tempLoss << " Temp=" << Temperature <<endl<<endl;; 
+        //if(it>5*timeStep) exit(0);
+
     }
     return Temperature;
 }
@@ -143,15 +145,18 @@ void model() {
     gr->SetMarkerSize(1.2); 
     gr->Draw("PZ");
 
-    TF1 *fHeat = new TF1("fheat", sHeat, 150, Xrange[1], 6);
+    fitRange[0]=150;
+    fitRange[1]=7000; //7e3;
+ 
+    TF1 *fHeat = new TF1("fheat", sHeat, fitRange[0], fitRange[1], 6);
 
     fHeat->SetParameters(
-            Xrange[0], // 0 time interval to fit, FIXED
-            Xrange[1], // 1 FIXED
+            fitRange[0], // 0 time interval to fit, FIXED
+            fitRange[1], // 1 FIXED
             150,       // 2 time offset
-            2.29e-3,   // 3 kin (heating = kin*Pin]
-            2.07e-2,    // 4 Qloss
-            7.6e7      // 5 Spadova teplota
+            1.8e-2,    // 3 kin (heating = kin*Pin]
+            7.9e3,   // 4 Qloss
+            3.3e7      // 5 Spadova teplota
             );
     fHeat->SetParName(0,"timeR[0]");
     fHeat->SetParName(1,"timeR[1]");
@@ -162,20 +167,17 @@ void model() {
 
     fHeat->FixParameter(0, Xrange[0]);
     fHeat->FixParameter(1, Xrange[1]);
-    fHeat->FixParameter(2, 150);
-    //fHeat->FixParameter(3, 4.2e-3);
+    //fHeat->FixParameter(2, 150);
+    //fHeat->FixParameter(3, 1.8e-2);
     //fHeat->FixParameter(4, 0);
+    //fHeat->FixParameter(5, 1);
     
     //fHeat->Draw("same"); return;
 
-    fitRange[0]=400;
-    fitRange[1]=7e3;
     gr->Fit("fheat"," ","R", fitRange[0], fitRange[1]);
-    cout<< fHeat->GetParameter(2)/60. << " mins" <<endl; 
-    TF1 *flin = new TF1("flin", "[0]*(x-[1])",Xrange[0], Xrange[1]);
-    flin->SetParameters(fHeat->GetParameter(3), fHeat->GetParameter(2));
-    flin->SetLineStyle(2); flin->Draw("same");
-    //return;
+    fHeat->SetParameter(4,0);
+    fHeat->SetLineStyle(2); fHeat->Draw("same");
+    return;
 
 
     // Cooling chart =======================================================
