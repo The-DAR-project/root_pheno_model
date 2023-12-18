@@ -40,14 +40,15 @@ class TData {
 
     public:
 
-        TGraph       *grAll;
+        TGraphErrors *chartHeating;
+        TGraphErrors *chartCooling;
         TGraphErrors *chartHeatingReb;
         TGraphErrors *chartCoolingReb;
         TGraphErrors *chartWin;
 
         TString fileName;
 
-        TData(TString infilename, double TambH, double TambC, double heatEndTime, double coolStarTime){
+        TData(TString infilename, double TambH, double TambC, double coolStarTime, int coolStartIdx, int heatEndIdx){
             //======== SetUp =============
             double TemperError = 1.0;          // Estimate, needs more attention
             double WinError    = 1.0;
@@ -65,7 +66,6 @@ class TData {
 
             double pwr, tvd02, tvd06, tvd03, pt1000, clock;
 
-            grAll           = new TGraph();
             chartHeatingReb = new TGraphErrors();
             chartCoolingReb = new TGraphErrors();
             chartWin = new TGraphErrors();
@@ -74,14 +74,11 @@ class TData {
             int countLines = 0;
             double sumTemp = 0, sumTime = 0, sumPWR=0, averTemp = 0, averTime = 0, averPWR = 0;
 
-            while(!myfile.eof() && count <10000) { //cutoff Carefull !!!!!!!!!!!!!!!!
-
+            while(!myfile.eof() && count <10000) {
                 //myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
                 myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
 
-                grAll->AddPoint(clock, tvd02); //for bounder check;
-
-                if(clock <= heatEndTime) {
+                if(count <= heatEndIdx) {
                     // Rebining
                     if(countLines<rebin[0]) {
                         sumTemp += tvd02; // - TambH;
@@ -104,8 +101,8 @@ class TData {
                         sumTime = 0;
                         sumPWR  = 0;
                     }
-                } else if(clock > coolStarTime && count < 10000) { //cutoff Carefull !!!!!!!!!!!!!!!!
-                                                                   // Rebining
+                } else if(count > coolStartIdx && count < 10000) {
+                    // Rebining
                     if(countLines<rebin[1]) {
                         sumTemp += tvd02; // - tempAmbHeating;
                         sumTime += clock; //*(tvd02 - tempAmbHeating);
@@ -126,9 +123,6 @@ class TData {
             cout << "Lines: " << count << endl;
         } //end of constructor
 
-        void DrawTemp(){
-            grAll->Draw("AL");
-        }
 
         TString GetFileName(){return fileName;}
 
@@ -140,16 +134,13 @@ void model() {
 
 
 
-    // TData("fileName:, T_Amb_Heating, T_Amb_Cooling, Heat_End_Time, Cooling_Start_Time);
+    // TData("fileName:, T_Amb_Heating, T_Amb_Cooling, Cooling_Start_Time, Cooling_Start_idx, HEating_End_idx);
 
     // Measurement 503
-    //TData *data503 = new TData("measurement_503.csv", 20.69, 38.93, 1030, 970);
-    //data503->DrawTemp(); return;
+    //TData *data503 = new TData("measurement_503.csv", 20.69, 38.93, 5180.0, 1030, 970);
 
     // Measurement 509
-    TData *data509 = new TData("measurement_509.csv", 21.63, 32.0, 7200, 13500);
-    //data509->DrawTemp(); return;
-    
+    TData *data509 = new TData("measurement_509.csv", 21.63, 32.0, 14205.9, 2823, 2400);
 
     //============================
 
@@ -227,6 +218,9 @@ void model() {
     pad->SetFillColor(33);pad->SetBorderMode(0); pad->SetBorderSize(0);
     pt = new TPaveText(0., 0, 1., 1.,"br");
     pt->AddText(data->GetFileName() ); pt->Draw();
+    
+    return;
+
 
 
     // Cooling chart =======================================================
@@ -304,23 +298,12 @@ void model() {
 
     gr = data->chartWin;
 
-    hfr = new TH2F("hfr"," ", 
-            10, 0, 8000, //gr->GetXaxis()->GetXmin(), gr->GetXaxis()->GetXmax(), 
-            10, 0, 4000); //gr->GetYaxis()->GetXmin(), gr->GetYaxis()->GetXmax());
-    
-    hset( *hfr, "Time [hour:min]","P_{in} [Ws]");
-    //hfr->GetXaxis()->SetTimeDisplay(1);
-    //hfr->GetXaxis()->SetTimeFormat("%H:%M");
-    hfr->Draw();
-
     //-----------------
     gr->SetMarkerStyle(33); 
     gr->SetMarkerColor(4); 
     gr->SetMarkerSize(1.2); 
     gr->SetLineColor(2);
-
-    gr->Fit("pol1");
-    gr->Draw("psame");
+    gr->Draw();
 
     pPrint("../../figs/heating","c2");
     pPrint("../../figs/cooling","c3");

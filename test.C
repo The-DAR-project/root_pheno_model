@@ -1,14 +1,29 @@
 
 
+class  TFcn {
+    
+    public:
+        TFcn(){
+            cout<<"ikjkk " <<endl;
+        }
+
+
+
+        double Evaluate(double *x, double *p) {
+            return p[0] +x[0]*p[1];
+        }
+};
+
+
+
 void test(){
 
-     TH1F *hid = new TH1F("Test","h",3000,0.,20000.);
-     hid->GetXaxis()->SetTimeDisplay(1);
-     //hid->GetXaxis()->SetTimeOffset(inputData->startTime.Convert());
-     hid->GetXaxis()->SetTimeFormat("%H:%M");
 
-     //TDatime da(2003,02,28,12,00,00);
-     //gStyle->SetTimeOffset(da.Convert());
+    TFcn *fptr = new TFcn();  // create the user function class
 
-     hid->Draw();
+    int npar = 2;
+    auto f = new TF1("f", fptr, &TFcn::Evaluate, 0, 1, npar, "TFcn", "Evaluate");   // create TF1 class.
+    f->SetParameters(1,1);
+    f->Draw();
 }
+
