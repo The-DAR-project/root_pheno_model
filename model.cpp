@@ -238,6 +238,7 @@ void model() {
 
     TGraphErrors *gr, *grDiff;
     TH2F *hfr;
+    TLegend *leg;
     TSplitCan *splitCan;
 
     //-----------------------
@@ -272,6 +273,7 @@ void model() {
     gr->SetMarkerSize(1.2); 
     gr->Draw("PZ");
 
+
     THeatFcn *ptrHeatFcn = new THeatFcn(150, 7000);
 
     TF1 *fHeat = new TF1("fheat", ptrHeatFcn, &THeatFcn::Evaluate, 
@@ -291,12 +293,31 @@ void model() {
     //fHeat->FixParameter(3, MeanT);
     //fHeat->Draw("same"); return;
 
+    //---- fit ------------------
     gr->Fit("fheat"," ","R", ptrHeatFcn->GetFitRangeLow(), ptrHeatFcn->GetFitRangeHigh());
+    //---------------------------
+
+    timeOfst   = fHeat->GetParameter(0);
+    kin        = fHeat->GetParameter(1);
+    Qloss      = fHeat->GetParameter(2);
+    MeanT      = fHeat->GetParameter(3);
+    double Tmax = MeanT*log(kin/Qloss+1);
+
+
     Qloss = fHeat->GetParameter(2);
     fHeat->SetParameter(2,0); // Pin
     fHeat->SetLineStyle(2); fHeat->DrawCopy("same");
     cout<<"Temp at 2h should be ="<<fHeat->Eval(2*3600) <<" deg"<<endl; 
     fHeat->SetParameter(2,Qloss); // Pin
+
+    leg = new TLegend(0.6,0.2,0.9,0.5," ","brNDC");
+    leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
+    leg->AddEntry(gr, "measurement","p");
+    auto *faux = new TF1("faux", "x", 0,1);
+    leg->AddEntry(faux, "model heating","l");
+    leg->AddEntry(fHeat, "no loss heating","l");
+    leg->AddEntry((TObject*)0, Form("Tmax = %2.1f #circC",Tmax),"");
+    leg->Draw(); 
 
     splitCan->PrintName(data->GetFileName());
 
@@ -353,7 +374,7 @@ void model() {
 
     gr->Draw("PZ");
 
-    TLegend *leg;
+    leg;
     leg = new TLegend(0.5,0.6,0.7,0.9,"Sauna - cooling","brNDC");
     leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
     leg->AddEntry(gr, "measurement","p");
