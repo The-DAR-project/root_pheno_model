@@ -81,7 +81,7 @@ class TData {
 
                 //myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
                 myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
-                //pwr /= 800;
+                pwr *= 1./800; // kW/800
 
                 grAll->AddPoint(clock, tvd02); //for bounder check;
 
@@ -138,29 +138,107 @@ class TData {
 
 };
 
+class TSplitCan {
+    
+    public:
+    
+        TCanvas *can[10];
+        TPad *mpad, *subMpad[2], *pad;
+        TPaveText *pt;
+        TAxis *ax, *ay;
+
+        TSplitCan(int CID){
+
+            gStyle->SetOptStat(0);
+            gStyle->SetOptTitle(0);
+
+            TString canName = Form("c%i",CID);
+            can[CID] = new TCanvas(canName, canName, 10, 50, 700, 700); 
+            can[CID]->Range(0,0,1,1);
+            can[CID]->SetFillColor(0); can[CID]->SetBorderMode(0); can[CID]->SetBorderSize(2);
+            can[CID]->SetTicky(1); can[CID]->SetFrameBorderMode(0);
+
+            mpad = new TPad("mpad", "mpad",0.01,0.01,0.99,0.99);
+            mpad->Draw();
+            mpad->cd();
+            mpad->Range(0,0,1,1);
+            
+            //pad division----------------------------------------
+            double divPosY=0.3, spaceBetweenDiv=9e-4; //Y division at 30% 
+
+            subMpad[0] = new TPad("mpad_1", "mpad_1", 0.01, divPosY-spaceBetweenDiv, 0.99, 0.99);
+            subMpad[0]->SetBottomMargin(0);
+            subMpad[0]->Draw();
+
+            mpad->cd();
+            subMpad[1] = new TPad("mpad_2", "mpad_2", 0.01, 0.01, 0.99, divPosY);
+            subMpad[1]->SetTopMargin(0.0);
+            subMpad[1]->SetBottomMargin(0.3);
+            subMpad[1]->Draw();
+            subMpad[1]->cd();
+
+        }
+
+        void SetGrid(int padID, int gx=0, int gy=0){
+            subMpad[padID]->SetGridx(gx);
+            subMpad[padID]->SetGridy(gy);
+        }
+
+        void SetUpperFramePars(TH1 &hid){
+            ax=hid.GetXaxis();      ay=hid.GetYaxis(); 
+            ax->SetTimeDisplay(1);  ax->SetTimeFormat("%H:%M"); ax->SetTimeOffset(-3600);
+            ax->SetTitleSize(0.055); ax->SetTitleOffset(0.88); 
+            ax->SetTitleSize(0.055); ay->SetTitleOffset(0.6); 
+        }
+
+        void SetLowerFramePars(TH1 &hid){
+            ax=hid.GetXaxis();      ay=hid.GetYaxis(); 
+            ax->SetTimeDisplay(1);  ax->SetTimeFormat("%H:%M"); ax->SetTimeOffset(-3600);
+            ax->SetTitleSize(0.15); ax->SetTitleOffset(0.8); 
+            ay->SetTitleSize(0.14); ay->SetTitleOffset(0.25);
+            ax->SetLabelSize(0.11); ax->SetLabelOffset(0.001);
+            ay->SetLabelSize(0.11); ay->SetLabelOffset(0.001);
+            ax->SetTickSize(0.08);
+        }
+
+        void PrintName(TString name){
+            pad = new TPad("pad", " ",0.3, 0.9, 0.7, 0.95);
+            pad->Draw(); pad->cd();  pad->Range(0,0,1,1);
+            pad->SetFillColor(33);pad->SetBorderMode(0); pad->SetBorderSize(0);
+            pt = new TPaveText(0., 0, 1., 1.,"br");
+            pt->AddText( name ); pt->Draw();
+        }
+
+};
+
+TGraphErrors* DeltaGrFcn( TGraphErrors *gr, TF1 *func, double ErrorSc = 0.1){
+    TGraphErrors *grDiff = new TGraphErrors();
+    int NP = gr->GetN();
+    for(int ip=0; ip<NP; ip++){
+        grDiff->AddPoint( gr->GetPointX(ip), gr->GetPointY(ip) - func->Eval(gr->GetPointX(ip)) );
+        grDiff->SetPointError(ip, 0, gr->GetErrorY(ip)*ErrorSc );
+        //cout<< ip <<" "<< gr->GetPointX(ip) <<" "<< gr->GetPointY(ip) <<" "<< fHeat->Eval(gr->GetPointX(ip)) <<endl; 
+    }
+    return grDiff;
+}
 
 
 void model() {
 
-
     // TData("fileName:, T_Amb_Heating, T_Amb_Cooling, Heat_End_Time, Cooling_Start_Time);
 
     // Measurement 503
-    TData *data503 = new TData("measurement_503.csv", 20.69, 38.93, 1030, 970);
-    data503->DrawTemp(); return;
+    //TData *data503 = new TData("measurement_503.csv", 20.69, 38.93, 1030, 970);
+    //data503->DrawTemp(); return;
 
     // Measurement 509
     TData *data509 = new TData("measurement_509.csv", 21.63, 32.0, 7200, 13500);
-    data509->DrawTemp(); return;
+    //data509->DrawTemp(); return;
 
-
-    //============================
 
     TGraphErrors *gr, *grDiff;
     TH2F *hfr;
-    TPad *pad;
-    TPaveText *pt;
-    TAxis *ax, *ay; 
+    TSplitCan *splitCan;
 
     //-----------------------
     TData *data = data509;
@@ -172,25 +250,11 @@ void model() {
     //======================================
     // Heating chart =======================
     //======================================
-    TCanvas *c2 = new TCanvas("c2", "c2",10,53,680,680);
-    gStyle->SetOptStat(0); gStyle->SetOptTitle(0);
-    c2->Range(0,0,1,1);
-    c2->SetFillColor(0); c2->SetBorderMode(0); c2->SetBorderSize(2);
-    c2->SetTicky(1); c2->SetFrameBorderMode(0);
 
-    TPad *mpad = new TPad("mpad", "mpad",0.01,0.01,0.99,0.99);
-    mpad->Draw();
-    mpad->cd();
-    mpad->Range(0,0,1,1);
-    //pad division----------------------------------------
-    double divPosY=0.3, spaceBetweenDiv=5e-4; //Y division at 30% 
-    //----------------------------------------------------
-
-    // ------------>Primitives in pad: mpad_1
-    TPad *mpad_1 = new TPad("mpad_1", "mpad_1",0.01, divPosY-spaceBetweenDiv, 0.99, 0.99);
-    mpad_1->SetBottomMargin(0);
-    mpad_1->Draw();
-    mpad_1->cd();
+    splitCan = new TSplitCan(2);
+    splitCan->SetGrid(0,1,0);
+    splitCan->SetGrid(1,1,1);
+    splitCan->subMpad[0]->cd();
 
     gr = data->chartHeatingReb;
     Xrange[0] = 0*gr->GetXaxis()->GetXmin();
@@ -200,10 +264,7 @@ void model() {
 
     hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]); 
     hset( *hfr, "Time [h:m]","Temp [deg]");
-    ax=hfr->GetXaxis();      ay=hfr->GetYaxis(); 
-    ax->SetTimeDisplay(1);   ax->SetTimeFormat("%H:%M"); ax->SetTimeOffset(-3600);
-    ax->SetTitleSize(0.055); ax->SetTitleOffset(0.88); 
-    ax->SetTitleSize(0.055); ay->SetTitleOffset(0.6); 
+    splitCan->SetUpperFramePars(*hfr);
     hfr->Draw();
 
     gr->SetMarkerStyle(33); 
@@ -237,40 +298,18 @@ void model() {
     cout<<"Temp at 2h should be ="<<fHeat->Eval(2*3600) <<" deg"<<endl; 
     fHeat->SetParameter(2,Qloss); // Pin
 
-    pad = new TPad("pad", " ",0.3, 0.9, 0.7, 0.95);
-    pad->Draw(); pad->cd();  pad->Range(0,0,1,1);
-    pad->SetFillColor(33);pad->SetBorderMode(0); pad->SetBorderSize(0);
-    pt = new TPaveText(0., 0, 1., 1.,"br");
-    pt->AddText(data->GetFileName() ); pt->Draw();
-
+    splitCan->PrintName(data->GetFileName());
 
     //======================================
     //Difference ===========================
     //======================================
-    mpad->cd();
-    TPad *mpad_2 = new TPad("mpad_2", "mpad_2", 0.01, 0.01, 0.99, divPosY);
-    mpad_2->SetTopMargin(0);
-    mpad_2->SetBottomMargin(0.3);
-    mpad_2->Draw();
-    mpad_2->SetGridy(1);
-    mpad_2->cd();
+    splitCan->subMpad[1]->cd();
 
-    grDiff = new TGraphErrors();
-    int NP = gr->GetN();
-    for(int ip=0; ip<NP; ip++){
-        grDiff->AddPoint( gr->GetPointX(ip), gr->GetPointY(ip) - fHeat->Eval(gr->GetPointX(ip)) );
-        grDiff->SetPointError(ip, 0, gr->GetErrorY(ip)*0.1 );
-        //cout<< ip <<" "<< gr->GetPointX(ip) <<" "<< gr->GetPointY(ip) <<" "<< fHeat->Eval(gr->GetPointX(ip)) <<endl; 
-    }
+    grDiff = DeltaGrFcn(gr, fHeat, 0.1);
 
     hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, 2.0*grDiff->GetYaxis()->GetXmin(), 2.0*grDiff->GetYaxis()->GetXmax() ); 
     hset( *hfr, "Time [h:m]","#DeltaTemp [deg]");
-    ax = hfr->GetXaxis();   ay=hfr->GetYaxis(); 
-    ax->SetTimeDisplay(1);  ax->SetTimeFormat("%H:%M"); ax->SetTimeOffset(-3600);
-    ax->SetTitleSize(0.15); ax->SetTitleOffset(0.8); 
-    ay->SetTitleSize(0.14); ay->SetTitleOffset(0.25);
-    ax->SetLabelSize(0.11); ax->SetLabelOffset(0.001);
-    ay->SetLabelSize(0.11); ay->SetLabelOffset(0.001);
+    splitCan->SetLowerFramePars(*hfr);
     hfr->Draw();
 
     grDiff->SetMarkerStyle(33); 
@@ -282,13 +321,9 @@ void model() {
     //======================================
     // Cooling chart =======================
     //======================================
-    mc(3,1.5);
-    gStyle->SetOptStat(0);
-    gStyle->SetOptTitle(0);
-    gStyle->SetMarkerSize(1.6);
-    mpad->SetLogx(0);  mpad->SetLogy(0);
-    mpad->SetGridx(0); mpad->SetGridy(0);
-    gPad->SetLeftMargin(0.17);
+    splitCan = new TSplitCan(3);
+    splitCan->SetGrid(1,0,1);
+    splitCan->subMpad[0]->cd();
 
     gr = data->chartCoolingReb;
 
@@ -304,9 +339,8 @@ void model() {
     double fitRange[2] = {5e3, 3e4};
 
     hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]); 
-    hset( *hfr, "Time [hour:min]","Temp [deg]");
-    ax = hfr->GetXaxis(); ay = hfr->GetYaxis(); 
-    ax->SetTimeDisplay(1); ax->SetTimeFormat("%H:%M"); ax->SetTimeOffset(-1.0*3600);
+    hset( *hfr, "Time [h:m]","Temp [deg]");
+    splitCan->SetUpperFramePars(*hfr);
     hfr->Draw();
 
     //-----------------
@@ -320,7 +354,7 @@ void model() {
     gr->Draw("PZ");
 
     TLegend *leg;
-    leg = new TLegend(0.5,0.7,0.7,0.9,"Sauna - cooling","brNDC");
+    leg = new TLegend(0.5,0.6,0.7,0.9,"Sauna - cooling","brNDC");
     leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
     leg->AddEntry(gr, "measurement","p");
     leg->AddEntry(fexp, "expo. fit", "l");
@@ -332,13 +366,34 @@ void model() {
     l = new TLine(fitRange[0], Yrange[0], fitRange[0], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
     l = new TLine(fitRange[1], Yrange[0], fitRange[1], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
 
-    pad = new TPad("pad", " ",0.2, 0.93, 0.9, 0.98);
-    pad->Draw(); pad->cd();  pad->Range(0,0,1,1);
-    pad->SetFillColor(33);pad->SetBorderMode(0); pad->SetBorderSize(0);
-    pt = new TPaveText(0., 0, 1., 1.,"br");
-    pt->AddText(data->GetFileName() ); pt->Draw();
+    splitCan->PrintName(data->GetFileName());
 
-    //return;
+    //======================================
+    //Difference ===========================
+    //======================================
+    splitCan->subMpad[1]->cd();
+
+    grDiff = new TGraphErrors();
+    int NP = gr->GetN();
+    for(int ip=0; ip<NP; ip++){
+        grDiff->AddPoint( gr->GetPointX(ip), gr->GetPointY(ip) - fexp->Eval(gr->GetPointX(ip)) );
+        grDiff->SetPointError(ip, 0, gr->GetErrorY(ip)*0.1 );
+        //cout<< ip <<" "<< gr->GetPointX(ip) <<" "<< gr->GetPointY(ip) <<" "<< fHeat->Eval(gr->GetPointX(ip)) <<endl; 
+    }
+
+    hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, 2.0*grDiff->GetYaxis()->GetXmin(), 2.0*grDiff->GetYaxis()->GetXmax() ); 
+    hset( *hfr, "Time [h:m]","#DeltaTemp [deg]");
+    splitCan->SetLowerFramePars(*hfr);
+    hfr->Draw();
+
+    grDiff->SetMarkerStyle(33); 
+    grDiff->SetMarkerColor(4); 
+    grDiff->SetMarkerSize(1.2); 
+    grDiff->Draw("PZ");
+
+    pPrint("../../figs/heating","c2");
+    pPrint("../../figs/cooling","c3");
+    return;
 
     // Cumulative W_in =======================================================
     mc(4,1.5);
@@ -349,8 +404,8 @@ void model() {
     gr = data->chartWin;
 
     hfr = new TH2F("hfr"," ", 
-            10, 0, 8000, //gr->GetXaxis()->GetXmin(), gr->GetXaxis()->GetXmax(), 
-            10, 0, 4000); //gr->GetYaxis()->GetXmin(), gr->GetYaxis()->GetXmax());
+            10, gr->GetXaxis()->GetXmin(), gr->GetXaxis()->GetXmax(), 
+            10, gr->GetYaxis()->GetXmin(), gr->GetYaxis()->GetXmax());
 
     hset( *hfr, "Time [hour:min]","P_{in} [Ws]");
     //hfr->GetXaxis()->SetTimeDisplay(1);
@@ -365,8 +420,5 @@ void model() {
 
     gr->Fit("pol1");
     gr->Draw("psame");
-
-    pPrint("../../figs/heating","c2");
-    pPrint("../../figs/cooling","c3");
 
 }
