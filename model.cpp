@@ -79,8 +79,8 @@ class TData {
 
             while(!myfile.eof() && count <10000) { //cutoff Carefull !!!!!!!!!!!!!!!!
 
-                //myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
-                myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
+                myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
+                //myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
                 pwr *= 1./800; // kW/800
 
                 grAll->AddPoint(clock, tvd02); //for bounder check;
@@ -232,9 +232,13 @@ void model() {
     //data503->DrawTemp(); return;
 
     // Measurement 509
-    TData *data509 = new TData("measurement_509.csv", 21.63, 32.0, 7200, 13500);
+    //TData *data509 = new TData("measurement_509.csv", 21.63, 32.0, 7200, 13500);
     //data509->DrawTemp(); return;
 
+
+    // Measurement 513
+    TData *data513 = new TData("measurement_513.csv", 20.98, 26.44, 5143, 5264);
+    //data513->DrawTemp(); return;
 
     TGraphErrors *gr, *grDiff;
     TH2F *hfr;
@@ -242,7 +246,7 @@ void model() {
     TSplitCan *splitCan;
 
     //-----------------------
-    TData *data = data509;
+    TData *data = data513;
     //-----------------------
 
     double Xrange[2], Yrange[2];
