@@ -53,7 +53,7 @@ class TData {
         TData(TString infilename, double TambH, double TambC, double heatEndTime, double coolStarTime){
             //======== SetUp =============
             double TemperError = 1.0;          // Estimate, needs more attention
-            double WinError    = 1.0;
+            double WinError    = 0.1;
             int rebin[2] = {30, 100};          // rebinning 100 for cooling 30 for heating
 
             fileName = infilename;
@@ -147,7 +147,7 @@ class TSplitCan {
         TPaveText *pt;
         TAxis *ax, *ay;
 
-        TSplitCan(int CID){
+        TSplitCan(int CID, int split=0){
 
             gStyle->SetOptStat(0);
             gStyle->SetOptTitle(0);
@@ -163,19 +163,28 @@ class TSplitCan {
             mpad->cd();
             mpad->Range(0,0,1,1);
             
-            //pad division----------------------------------------
-            double divPosY=0.3, spaceBetweenDiv=9e-4; //Y division at 30% 
+            if(split==0){
+                mpad->SetLeftMargin(0.15);
+                mpad->SetBottomMargin(0.15);
+                mpad->SetTopMargin(0.06);
+                mpad->SetRightMargin(0.06);
+            }
 
-            subMpad[0] = new TPad("mpad_1", "mpad_1", 0.01, divPosY-spaceBetweenDiv, 0.99, 0.99);
-            subMpad[0]->SetBottomMargin(0);
-            subMpad[0]->Draw();
+            if(split==1){
+                //pad division----------------------------------------
+                double divPosY=0.3, spaceBetweenDiv=9e-4; //Y division at 30% 
 
-            mpad->cd();
-            subMpad[1] = new TPad("mpad_2", "mpad_2", 0.01, 0.01, 0.99, divPosY);
-            subMpad[1]->SetTopMargin(0.0);
-            subMpad[1]->SetBottomMargin(0.3);
-            subMpad[1]->Draw();
-            subMpad[1]->cd();
+                subMpad[0] = new TPad("mpad_1", "mpad_1", 0.01, divPosY-spaceBetweenDiv, 0.99, 0.99);
+                subMpad[0]->SetBottomMargin(0);
+                subMpad[0]->Draw();
+
+                mpad->cd();
+                subMpad[1] = new TPad("mpad_2", "mpad_2", 0.01, 0.01, 0.99, divPosY);
+                subMpad[1]->SetTopMargin(0.0);
+                subMpad[1]->SetBottomMargin(0.3);
+                subMpad[1]->Draw();
+                subMpad[1]->cd();
+            }
 
         }
 
@@ -248,11 +257,15 @@ void model() {
     double Xrange[2], Yrange[2];
 
 
+    // calculate P_in
+    data->chartWin->Fit("pol1");
+    double Pin = data->chartWin->GetFunction("pol1")->GetParameter(1)*3600; //kW
+
     //======================================
     // Heating chart =======================
     //======================================
 
-    splitCan = new TSplitCan(2);
+    splitCan = new TSplitCan(2,1);
     splitCan->SetGrid(0,1,0);
     splitCan->SetGrid(1,1,1);
     splitCan->subMpad[0]->cd();
@@ -280,7 +293,7 @@ void model() {
             ptrHeatFcn->GetFitRangeLow(), ptrHeatFcn->GetFitRangeHigh(), 4);
 
     double timeOfst = 0;      //0 time offset
-    double kin      = 1.729e-2;   //1 kin (heating = kin*Pin]
+    double kin      = 1.729e-2;   //1 kin (heating = kin*Pin)
     double Qloss    = 4.958e3;    //2 Qloss
     double MeanT    = 2.225e7;    //3 Spadova teplota
 
@@ -310,13 +323,13 @@ void model() {
     cout<<"Temp at 2h should be ="<<fHeat->Eval(2*3600) <<" deg"<<endl; 
     fHeat->SetParameter(2,Qloss); // Pin
 
-    leg = new TLegend(0.6,0.2,0.9,0.5," ","brNDC");
+    leg = new TLegend(0.4,0.2,0.9,0.5," ","brNDC");
     leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
-    leg->AddEntry(gr, "measurement","p");
+    leg->AddEntry(gr, "data","p");
     auto *faux = new TF1("faux", "x", 0,1);
     leg->AddEntry(faux, "model heating","l");
     leg->AddEntry(fHeat, "no loss heating","l");
-    leg->AddEntry((TObject*)0, Form("Tmax = %2.1f #circC",Tmax),"");
+    leg->AddEntry((TObject*)0, Form("Tmax (P_{in}=%1.2fkW) = %2.1f #circC", Pin, Tmax),"");
     leg->Draw(); 
 
     splitCan->PrintName(data->GetFileName());
@@ -342,7 +355,7 @@ void model() {
     //======================================
     // Cooling chart =======================
     //======================================
-    splitCan = new TSplitCan(3);
+    splitCan = new TSplitCan(3,1);
     splitCan->SetGrid(1,0,1);
     splitCan->subMpad[0]->cd();
 
@@ -374,10 +387,9 @@ void model() {
 
     gr->Draw("PZ");
 
-    leg;
     leg = new TLegend(0.5,0.6,0.7,0.9,"Sauna - cooling","brNDC");
     leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
-    leg->AddEntry(gr, "measurement","p");
+    leg->AddEntry(gr, "data","p");
     leg->AddEntry(fexp, "expo. fit", "l");
     leg->AddEntry((TObject*)0, Form("T_{0}=%2.1f #circC", fexp->GetParameter(0)),"");
     leg->AddEntry((TObject*)0, Form("#LTt#GT=%4.0f min", 1/fexp->GetParameter(1)/60),"");
@@ -414,32 +426,36 @@ void model() {
 
     pPrint("../../figs/heating","c2");
     pPrint("../../figs/cooling","c3");
-    return;
+    //return;
 
-    // Cumulative W_in =======================================================
-    mc(4,1.5);
-    mpad->SetLogx(0);  mpad->SetLogy(0);
-    mpad->SetGridx(0); mpad->SetGridy(0);
-    gPad->SetLeftMargin(0.17);
+    //======================================
+    // Cumulative W_in =====================
+    //======================================
+    splitCan = new TSplitCan(4,0);
 
     gr = data->chartWin;
-
     hfr = new TH2F("hfr"," ", 
             10, gr->GetXaxis()->GetXmin(), gr->GetXaxis()->GetXmax(), 
             10, gr->GetYaxis()->GetXmin(), gr->GetYaxis()->GetXmax());
 
-    hset( *hfr, "Time [hour:min]","P_{in} [Ws]");
-    //hfr->GetXaxis()->SetTimeDisplay(1);
-    //hfr->GetXaxis()->SetTimeFormat("%H:%M");
+    hset( *hfr, "Time [hour:min]","P_{in} [kWh]");
+    hfr->GetXaxis()->SetTimeDisplay(1);
+    hfr->GetXaxis()->SetTimeFormat("%H:%M");
+    hfr->GetXaxis()->SetTimeOffset(-3600);
     hfr->Draw();
 
     //-----------------
     gr->SetMarkerStyle(33); 
     gr->SetMarkerColor(4); 
     gr->SetMarkerSize(1.2); 
-    gr->SetLineColor(2);
+    gr->SetLineColor(4);
 
     gr->Fit("pol1");
     gr->Draw("psame");
+
+    leg = new TLegend(0.2,0.2,0.72,0.4," ","brNDC");
+    leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
+    leg->AddEntry((TObject*)0, Form("P_{in} = %3.2f kW", gr->GetFunction("pol1")->GetParameter(1)*3600 ),"p");
+    leg->Draw(); 
 
 }
