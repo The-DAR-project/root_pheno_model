@@ -6,16 +6,13 @@ class TData {
         TGraphErrors *chartHeatingReb;
         TGraphErrors *chartCoolingReb;
         TGraphErrors *chartWin;
-        int RunID;
-        TString fileName;
 
-        TData(TString infilename, int inRunID, double Tamb, double heatEndTime, int rebHeat, double coolStarTime, int rebCool) {
+        TData(TString fileName, double Tamb, int rebHeat, int rebCool) {
             double TemperError = 1.0;          // Estimate, needs more attention
             double WinError    = 0.1;
             int rebin[2] = {rebHeat, rebCool};
             RunID = inRunID;
 
-            fileName = infilename;
             ifstream myfile(fileName);
             if(myfile.fail()) {
                 cout << "File " << fileName << " does not exists" << endl;
@@ -95,9 +92,5 @@ class TData {
 
         TString GetFileName() {
             return fileName;
-        }
-
-        int GetRunID() {
-            return RunID;
         }
 };
