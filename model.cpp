@@ -1,5 +1,6 @@
-
-#include "base.h"
+#include "t_heat_func.h"
+#include "t_data.h"
+#include "t_split_can.h"
 
 TGraphErrors* DeltaGrFcn( TGraphErrors *gr, TF1 *func, double ErrorSc = 0.1){
     TGraphErrors *grDiff = new TGraphErrors();
@@ -12,27 +13,7 @@ TGraphErrors* DeltaGrFcn( TGraphErrors *gr, TF1 *func, double ErrorSc = 0.1){
     return grDiff;
 }
 
-
-void model() {
-
-    // TData("fileName:, RunID, T_Amb, Heat_End_Time, Heat_rebin, Cooling_Start_Time, Cool_Rebin);
-
-    // Measurement 503
-    //TData *data = new TData("measurement_503.csv", 503, 20.69, 4900, 20, 5500, 50);
-
-    // Measurement 509
-    TData *data = new TData("measurement_509.csv", 509, 21.6, 7200, 30, 13500, 100);
-
-    // Measurement 513
-    //TData *data = new TData("measurement_513.csv", 513, 20.98, 5143, 20, 6500, 100);
-
-    //data->DrawTemp(); return;
-
-    //-----------------------
-    //TData *data = data513;
-    //-----------------------
-
-
+void drawHeatChart(TData *data) {
     TGraphErrors *gr, *grDiff;
     TH2F *hfr;
     TLegend *leg;
@@ -40,14 +21,9 @@ void model() {
 
     double Xrange[2], Yrange[2];
 
-
     // calculate P_in
     data->chartWin->Fit("pol1");
     double Pin = data->chartWin->GetFunction("pol1")->GetParameter(1)*3600; //kW
-
-    //======================================
-    // Heating chart =======================
-    //======================================
 
     splitCan = new TSplitCan(2,1);
     splitCan->SetGrid(0,1,0);
@@ -134,11 +110,16 @@ void model() {
     grDiff->SetMarkerColor(4); 
     grDiff->SetMarkerSize(1.2); 
     grDiff->Draw("PZ");
+}
 
+void drawCoolingChart(TData *data) {
+    TGraphErrors *gr, *grDiff;
+    TH2F *hfr;
+    TLegend *leg;
+    TSplitCan *splitCan;
 
-    //======================================
-    // Cooling chart =======================
-    //======================================
+    double Xrange[2], Yrange[2];
+
     splitCan = new TSplitCan(3,1);
     splitCan->SetGrid(1,0,1);
     splitCan->subMpad[0]->cd();
@@ -212,11 +193,14 @@ void model() {
 
     pPrint(Form("../../figs/heating_%i",data->GetRunID()),"c2");
     pPrint(Form("../../figs/cooling_%i",data->GetRunID()),"c3");
-    //return;
+}
 
-    //======================================
-    // Cumulative W_in =====================
-    //======================================
+void drawCumulativeWinChart(TData *data) {
+    TGraphErrors *gr, *grDiff;
+    TH2F *hfr;
+    TLegend *leg;
+    TSplitCan *splitCan;
+
     splitCan = new TSplitCan(4,0);
 
     gr = data->chartWin;
@@ -243,5 +227,22 @@ void model() {
     leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
     leg->AddEntry((TObject*)0, Form("P_{in} = %3.2f kW", gr->GetFunction("pol1")->GetParameter(1)*3600 ),"p");
     leg->Draw(); 
+}
 
+void model() {
+
+    // TData("fileName:, RunID, T_Amb, Heat_End_Time, Heat_rebin, Cooling_Start_Time, Cool_Rebin);
+
+    // Measurement 503
+    //TData *data = new TData("measurement_503.csv", 503, 20.69, 4900, 20, 5500, 50);
+
+    // Measurement 509
+    TData *data = new TData("measurement_509.csv", 509, 21.6, 7200, 30, 13500, 100);
+
+    // Measurement 513
+    //TData *data = new TData("measurement_513.csv", 513, 20.98, 5143, 20, 6500, 100);
+
+    drawHeatChart(data);
+    drawCoolingChart(data);
+    drawCumulativeWinChart(data);
 }
