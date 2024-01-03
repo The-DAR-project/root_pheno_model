@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 
     // Check if required arguments are provided
     if (inputFile.empty()) {
-        std::cerr << "Usage: " << argv[0] << " -i <input_file> [-he <heating_end_clock>] [-cs <cooling_start_clock>] [-hd] [-cd]\n";
+        std::cerr << "Usage: " << argv[0] << " -i <input_file> [-he <heating_end_clock>] [-cs <cooling_start_clock>] [--heating] [--cooling]\n";
         return 1;
     }
 
