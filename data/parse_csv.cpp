@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
             for (int i = 0; i < tokens.size(); ++i) {
                 if (columnsToExport.find(i) != columnsToExport.end()) {
                     if (!firstColumn) {
-                        outFile << ",";
+                        outFile << " ";
                     }
                     outFile << tokens[i];
                     firstColumn = false;

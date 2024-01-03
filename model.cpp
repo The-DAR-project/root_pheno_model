@@ -13,7 +13,7 @@ TGraphErrors* DeltaGrFcn( TGraphErrors *gr, TF1 *func, double ErrorSc = 0.1){
     return grDiff;
 }
 
-void drawHeatChart(TData *data) {
+void drawHeatChart(TData *data, TString chartTitle) {
     TGraphErrors *gr, *grDiff;
     TH2F *hfr;
     TLegend *leg;
@@ -92,7 +92,7 @@ void drawHeatChart(TData *data) {
     leg->AddEntry((TObject*)0, Form("Tmax (P_{in}=%1.2fkW) = %2.1f #circC", Pin, Tmax),"");
     leg->Draw(); 
 
-    splitCan->PrintName(data->GetFileName());
+    splitCan->PrintName(chartTitle);
 
     //======================================
     //Difference ===========================
@@ -112,7 +112,7 @@ void drawHeatChart(TData *data) {
     grDiff->Draw("PZ");
 }
 
-void drawCoolingChart(TData *data) {
+void drawCoolingChart(TData *data, TString chartTitle) {
     TGraphErrors *gr, *grDiff;
     TH2F *hfr;
     TLegend *leg;
@@ -166,7 +166,7 @@ void drawCoolingChart(TData *data) {
     //l = new TLine(fitRange[0], Yrange[0], fitRange[0], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
     //l = new TLine(fitRange[1], Yrange[0], fitRange[1], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
 
-    splitCan->PrintName(data->GetFileName());
+    splitCan->PrintName(chartTitle);
 
     //======================================
     //Difference ===========================
@@ -191,8 +191,8 @@ void drawCoolingChart(TData *data) {
     grDiff->SetMarkerSize(1.2); 
     grDiff->Draw("PZ");
 
-    pPrint(Form("../../figs/heating_%i",data->GetRunID()),"c2");
-    pPrint(Form("../../figs/cooling_%i",data->GetRunID()),"c3");
+    //pPrint(Form("../../figs/heating_%i",data->GetRunID()),"c2");
+    //pPrint(Form("../../figs/cooling_%i",data->GetRunID()),"c3");
 }
 
 void drawCumulativeWinChart(TData *data) {
@@ -230,19 +230,10 @@ void drawCumulativeWinChart(TData *data) {
 }
 
 void model() {
+    TData *heatingData = new TData("data/heating.csv", "heating", 21.6, 30, 100);
+    TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 30, 100);
 
-    // TData("fileName:, RunID, T_Amb, Heat_End_Time, Heat_rebin, Cooling_Start_Time, Cool_Rebin);
-
-    // Measurement 503
-    //TData *data = new TData("measurement_503.csv", 503, 20.69, 4900, 20, 5500, 50);
-
-    // Measurement 509
-    TData *data = new TData("data/data.csv", 509, 21.6, 7200, 30, 13500, 100);
-
-    // Measurement 513
-    //TData *data = new TData("measurement_513.csv", 513, 20.98, 5143, 20, 6500, 100);
-
-    drawHeatChart(data);
-    drawCoolingChart(data);
-    drawCumulativeWinChart(data);
+    drawHeatChart(heatingData, "Heating");
+    drawCoolingChart(coolingData, "Cooling");
+    drawCumulativeWinChart(heatingData);
 }

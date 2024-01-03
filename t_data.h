@@ -7,11 +7,10 @@ class TData {
         TGraphErrors *chartCoolingReb;
         TGraphErrors *chartWin;
 
-        TData(TString fileName, double Tamb, int rebHeat, int rebCool) {
+        TData(TString fileName, TString dataType, double Tamb, int rebHeat, int rebCool) {
             double TemperError = 1.0;          // Estimate, needs more attention
             double WinError    = 0.1;
             int rebin[2] = {rebHeat, rebCool};
-            RunID = inRunID;
 
             ifstream myfile(fileName);
             if(myfile.fail()) {
@@ -22,7 +21,7 @@ class TData {
             char dummyText[1024];
             myfile.getline(dummyText, 1024);
 
-            double pwr, tvd02, tvd06, tvd03, pt1000, clock;
+            double pwr, temp, clock;
 
             grAll           = new TGraph();
             chartHeatingReb = new TGraphErrors();
@@ -35,18 +34,18 @@ class TData {
 
             while(!myfile.eof()) {
                 // Reads file
-                myfile >> pwr >> tvd02 >> clock;
+                myfile >> pwr >> temp >> clock;
 
                 // 800 impuls are 1 kW
                 pwr *= 1./800; // kW/800
 
-                grAll->AddPoint(clock, tvd02); //for bounder check;
+                grAll->AddPoint(clock, temp); //for bounder check;
 
-                if(clock <= heatEndTime) {
+                if(dataType == "heating") {
                     // Rebining
                     if(countLines<rebin[0]) {
-                        sumTemp += tvd02; // - Tamb;
-                        sumTime += clock; //*(tvd02 - Tamb);
+                        sumTemp += temp; // - Tamb;
+                        sumTime += clock; //*(temp - Tamb);
                         sumPWR  += pwr;
                         countLines++;
                     } else {
@@ -65,15 +64,15 @@ class TData {
                         sumTime = 0;
                         sumPWR  = 0;
                     }
-                } else if(clock > coolStarTime) {
+                } else if(dataType == "cooling") {
                     if(countLines<rebin[1]) {
-                        sumTemp += tvd02; // - tempAmbHeating;
-                        sumTime += clock; //*(tvd02 - tempAmbHeating);
+                        sumTemp += temp; // - tempAmbHeating;
+                        sumTime += clock; //*(temp - tempAmbHeating);
                         countLines++;
                     } else {
                         averTemp = sumTemp/rebin[1];
                         averTime = sumTime/rebin[1];
-                        chartCoolingReb->AddPoint(averTime - coolStarTime, averTemp - Tamb);
+                        chartCoolingReb->AddPoint(averTime - 13500, averTemp - Tamb);
                         chartCoolingReb->SetPointError(chartCoolingReb->GetN()-1, 0, TemperError);
                         countLines = 0;
                         sumTemp = 0;
@@ -88,9 +87,5 @@ class TData {
 
         void DrawTemp() {
             grAll->Draw("AL");
-        }
-
-        TString GetFileName() {
-            return fileName;
         }
 };

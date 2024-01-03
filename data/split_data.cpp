@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
             if (i + 1 < argc) { coolingStartClock = std::stod(argv[++i]); }
             else { std::cerr << "No cooling start clock specified after -cs\n"; return 1; }
         }
-        else if (arg == "--heeting") {
+        else if (arg == "--heating") {
             hasHeatingData = true;
         }
         else if (arg == "--cooling") {
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
         std::string token;
 
         // Splitting the line into tokens
-        while (std::getline(iss, token, ',')) { // Assuming ',' as the delimiter
+        while (std::getline(iss, token, ' ')) { // Adjust delimiter if needed
             tokens.push_back(token);
         }
 

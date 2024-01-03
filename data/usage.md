@@ -25,5 +25,5 @@ g++ -o splitData split_data.cpp
 ### Usage
 
 ```
-./splitData -i "parsed_data.csv" -he 7200 -cs 13500 --heeting --cooling
+./splitData -i "parsed_data.csv" -he 7200 -cs 13500 --heating --cooling
 ```
