@@ -237,7 +237,7 @@ void model() {
     //TData *data = new TData("measurement_503.csv", 503, 20.69, 4900, 20, 5500, 50);
 
     // Measurement 509
-    TData *data = new TData("measurement_509.csv", 509, 21.6, 7200, 30, 13500, 100);
+    TData *data = new TData("data/data.csv", 509, 21.6, 7200, 30, 13500, 100);
 
     // Measurement 513
     //TData *data = new TData("measurement_513.csv", 513, 20.98, 5143, 20, 6500, 100);

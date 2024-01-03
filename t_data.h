@@ -7,14 +7,12 @@ class TData {
         TGraphErrors *chartCoolingReb;
         TGraphErrors *chartWin;
         int RunID;
-
         TString fileName;
 
-        TData(TString infilename, int inRunID, double Tamb, double heatEndTime, int rebHeat, double coolStarTime, int rebCool){
-            //======== SetUp =============
+        TData(TString infilename, int inRunID, double Tamb, double heatEndTime, int rebHeat, double coolStarTime, int rebCool) {
             double TemperError = 1.0;          // Estimate, needs more attention
             double WinError    = 0.1;
-            int rebin[2] = {rebHeat, rebCool};          // rebinning 100 for cooling 30 for heating
+            int rebin[2] = {rebHeat, rebCool};
             RunID = inRunID;
 
             fileName = infilename;
@@ -38,13 +36,11 @@ class TData {
             int countLines = 0;
             double sumTemp = 0, sumTime = 0, sumPWR=0, averTemp = 0, averTime = 0, averPWR = 0;
 
-            while(!myfile.eof() && count <10000) { //cutoff Carefull !!!!!!!!!!!!!!!!
+            while(!myfile.eof()) {
+                // Reads file
+                myfile >> pwr >> tvd02 >> clock;
 
-                if(RunID == 509)
-                    myfile >> pwr >> tvd02 >> tvd06 >> pt1000 >> clock;
-                else
-                    myfile >> pwr >> tvd02 >> tvd06 >> tvd03 >> pt1000 >> clock;
-
+                // 800 impuls are 1 kW
                 pwr *= 1./800; // kW/800
 
                 grAll->AddPoint(clock, tvd02); //for bounder check;
@@ -72,8 +68,7 @@ class TData {
                         sumTime = 0;
                         sumPWR  = 0;
                     }
-                } else if(clock > coolStarTime && count < 10000) { //cutoff Carefull !!!!!!!!!!!!!!!!
-                                                                   // Rebining
+                } else if(clock > coolStarTime) {
                     if(countLines<rebin[1]) {
                         sumTemp += tvd02; // - tempAmbHeating;
                         sumTime += clock; //*(tvd02 - tempAmbHeating);
@@ -92,13 +87,17 @@ class TData {
                 count++;
             }
             cout << "Lines: " << count << endl;
-        } //end of constructor
+        }
 
-        void DrawTemp(){
+        void DrawTemp() {
             grAll->Draw("AL");
         }
 
-        TString GetFileName(){return fileName;}
-        int GetRunID(){return RunID;}
+        TString GetFileName() {
+            return fileName;
+        }
 
+        int GetRunID() {
+            return RunID;
+        }
 };
