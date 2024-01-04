@@ -230,8 +230,8 @@ void drawCumulativeWinChart(TData *data) {
 }
 
 void model() {
-    TData *heatingData = new TData("data/heating.csv", "heating", 21.6, 30, 100);
-    TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 30, 100);
+    TData *heatingData = new TData("data/heating.csv", "heating", 21.6, 30);
+    TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 100);
 
     drawHeatChart(heatingData, "Heating");
     drawCoolingChart(coolingData, "Cooling");

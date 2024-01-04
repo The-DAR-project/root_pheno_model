@@ -7,10 +7,9 @@ class TData {
         TGraphErrors *chartCoolingReb;
         TGraphErrors *chartWin;
 
-        TData(TString fileName, TString dataType, double Tamb, int rebHeat, int rebCool) {
+        TData(TString fileName, TString dataType, double Tamb, int rebin) {
             double TemperError = 1.0;          // Estimate, needs more attention
             double WinError    = 0.1;
-            int rebin[2] = {rebHeat, rebCool};
 
             ifstream myfile(fileName);
             if(myfile.fail()) {
@@ -43,15 +42,15 @@ class TData {
 
                 if(dataType == "heating") {
                     // Rebining
-                    if(countLines<rebin[0]) {
+                    if(countLines<rebin) {
                         sumTemp += temp; // - Tamb;
                         sumTime += clock; //*(temp - Tamb);
                         sumPWR  += pwr;
                         countLines++;
                     } else {
-                        averTemp = sumTemp/rebin[0];
-                        averTime = sumTime/rebin[0];
-                        averPWR = sumPWR/rebin[0];
+                        averTemp = sumTemp/rebin;
+                        averTime = sumTime/rebin;
+                        averPWR = sumPWR/rebin;
 
                         chartHeatingReb->AddPoint(averTime, averTemp - Tamb);
                         chartHeatingReb->SetPointError(chartHeatingReb->GetN()-1, 0, 2*TemperError);
@@ -65,13 +64,13 @@ class TData {
                         sumPWR  = 0;
                     }
                 } else if(dataType == "cooling") {
-                    if(countLines<rebin[1]) {
+                    if(countLines<rebin) {
                         sumTemp += temp; // - tempAmbHeating;
                         sumTime += clock; //*(temp - tempAmbHeating);
                         countLines++;
                     } else {
-                        averTemp = sumTemp/rebin[1];
-                        averTime = sumTime/rebin[1];
+                        averTemp = sumTemp/rebin;
+                        averTime = sumTime/rebin;
                         chartCoolingReb->AddPoint(averTime - 13500, averTemp - Tamb);
                         chartCoolingReb->SetPointError(chartCoolingReb->GetN()-1, 0, TemperError);
                         countLines = 0;
