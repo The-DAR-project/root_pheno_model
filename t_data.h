@@ -17,9 +17,6 @@ class TData {
                 exit(0);
             }
 
-            char dummyText[1024];
-            myfile.getline(dummyText, 1024);
-
             double pwr, temp, clock;
 
             grAll           = new TGraph();

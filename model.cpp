@@ -52,10 +52,12 @@ void drawHeatChart(TData *data, TString chartTitle) {
     TF1 *fHeat = new TF1("fheat", ptrHeatFcn, &THeatFcn::Evaluate, 
             ptrHeatFcn->GetFitRangeLow(), ptrHeatFcn->GetFitRangeHigh(), 4);
 
-    double timeOfst = 0;      //0 time offset
-    double kin      = 1.73183e-2;   //1 kin (heating = kin*Pin)
-    double Qloss    = 4.96247e3;    //2 Qloss
-    double MeanT    = 2.223e7;    //3 Spadova teplota
+
+    // Defines fit params "out of hand".
+    double timeOfst = 0;            // 0 time offset
+    double kin      = 1.73183e-2;   // 1 kin (heating = kin*Pin)
+    double Qloss    = 4.96247e3;    // 2 Qloss
+    double MeanT    = 2.223e7;      // 3 Spadova teplota
 
     fHeat->SetParameters(timeOfst, kin, Qloss, MeanT);
     fHeat->SetParNames("timeOfst", "kin", "Qloss", "MeanT");
@@ -76,11 +78,14 @@ void drawHeatChart(TData *data, TString chartTitle) {
     MeanT      = fHeat->GetParameter(3);
     double Tmax = MeanT*log(kin/Qloss+1);
 
-
     Qloss = fHeat->GetParameter(2);
     fHeat->SetParameter(2,0); // Pin
-    fHeat->SetLineStyle(2); fHeat->DrawCopy("same");
-    cout<<"Temp at 2h should be ="<<fHeat->Eval(2*3600) <<" deg"<<endl; 
+    fHeat->SetLineStyle(2);
+    fHeat->DrawCopy("same");
+
+    cout << "Temp at 2h should be =" << fHeat->Eval(300) <<" deg" << endl;
+    cout << "Warmrate is " << fHeat->Eval(360) - fHeat->Eval(300) << " deg / min" << endl;
+
     fHeat->SetParameter(2,Qloss); // Pin
 
     leg = new TLegend(0.4,0.2,0.9,0.5," ","brNDC");
@@ -231,9 +236,9 @@ void drawCumulativeWinChart(TData *data) {
 
 void model() {
     TData *heatingData = new TData("data/heating.csv", "heating", 21.6, 30);
-    TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 100);
+    //TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 100);
 
     drawHeatChart(heatingData, "Heating");
-    drawCoolingChart(coolingData, "Cooling");
+    //drawCoolingChart(coolingData, "Cooling");
     drawCumulativeWinChart(heatingData);
 }
