@@ -46,8 +46,7 @@ void drawHeatChart(TData *data, TString chartTitle) {
     gr->SetMarkerSize(1.2); 
     gr->Draw("PZ");
 
-
-    THeatFcn *ptrHeatFcn = new THeatFcn(150, 7000);
+    THeatFcn *ptrHeatFcn = new THeatFcn(5, 4000);
 
     TF1 *fHeat = new TF1("fheat", ptrHeatFcn, &THeatFcn::Evaluate, 
             ptrHeatFcn->GetFitRangeLow(), ptrHeatFcn->GetFitRangeHigh(), 4);
@@ -84,7 +83,7 @@ void drawHeatChart(TData *data, TString chartTitle) {
     fHeat->DrawCopy("same");
 
     cout << "Temp at 2h should be =" << fHeat->Eval(300) <<" deg" << endl;
-    cout << "Warmrate is " << fHeat->Eval(360) - fHeat->Eval(300) << " deg / min" << endl;
+    cout << "Warmrate is " << fHeat->Eval(70) - fHeat->Eval(10) << " deg / min" << endl;
 
     fHeat->SetParameter(2,Qloss); // Pin
 
@@ -165,7 +164,7 @@ void drawCoolingChart(TData *data, TString chartTitle) {
     leg->AddEntry(fexp, "expo. fit", "l");
     leg->AddEntry((TObject*)0, Form("T_{0}=%2.1f #circC", fexp->GetParameter(0)),"");
     leg->AddEntry((TObject*)0, Form("#LTt#GT=%4.0f min", 1/fexp->GetParameter(1)/60),"");
-    leg->Draw(); 
+    leg->Draw();
 
     //TLine *l;
     //l = new TLine(fitRange[0], Yrange[0], fitRange[0], Yrange[1]); l->SetLineStyle(2); l->Draw(); 
@@ -235,10 +234,25 @@ void drawCumulativeWinChart(TData *data) {
 }
 
 void model() {
-    TData *heatingData = new TData("data/heating.csv", "heating", 21.6, 30);
+    //TData *heatingData1 = new TData("data/heating_344_without_dalyn.csv", "heating", 21.6, 30);
+    //TData *heatingData2 = new TData("data/heating_344_with_dalyn.csv", "heating", 21.6, 30);
+
+    TData *heatingData1 = new TData("data/heating_344_without_dalyn_space.csv", "heating", 21.6, 30);
+    //TData *heatingData2 = new TData("data/heating_344_with_dalyn.csv", "heating", 21.6, 30);
+
+    //TData *heatingData1 = new TData("data/fukary/heating_2R_DIR.csv", "heating", 21.6, 30);
+    //TData *heatingData2 = new TData("data/fukary/heating_3R_DIR.csv", "heating", 21.6, 30);
+    //TData *heatingData3 = new TData("data/fukary/heating_2R_DAL.csv", "heating", 21.6, 30);
+    //TData *heatingData1 = new TData("data/fukary/F-DIR-2R-25cm-2vs3comp.csv", "heating", 21.6, 30);
+    //TData *heatingData2 = new TData("data/fukary/F-DIR-3R-25cm-2vs3comp.csv", "heating", 21.6, 30);
+    //TData *heatingData3 = new TData("data/fukary/F-DAL-2R-25cm-40uF-LM.csv", "heating", 21.6, 30);
+
+
     //TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 100);
 
-    drawHeatChart(heatingData, "Heating");
+    drawHeatChart(heatingData1, "Without Dalyn");
+    //drawHeatChart(heatingData2, "With Dalyn");
+    //drawHeatChart(heatingData3, "Heating");
     //drawCoolingChart(coolingData, "Cooling");
-    drawCumulativeWinChart(heatingData);
+    //drawCumulativeWinChart(heatingData);
 }
