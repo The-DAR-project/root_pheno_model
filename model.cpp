@@ -234,25 +234,12 @@ void drawCumulativeWinChart(TData *data) {
 }
 
 void model() {
-    //TData *heatingData1 = new TData("data/heating_344_without_dalyn.csv", "heating", 21.6, 30);
-    //TData *heatingData2 = new TData("data/heating_344_with_dalyn.csv", "heating", 21.6, 30);
+    // Params: fileName, dataType, Tamb, rebin
+    TData *heatingData = new TData("csv_data/509/heating.csv", "heating", 21.6, 30);
+    TData *coolingData = new TData("csv_data/509/cooling.csv", "cooling", 21.6, 100);
 
-    TData *heatingData1 = new TData("data/heating_344_without_dalyn_space.csv", "heating", 21.6, 30);
-    //TData *heatingData2 = new TData("data/heating_344_with_dalyn.csv", "heating", 21.6, 30);
-
-    //TData *heatingData1 = new TData("data/fukary/heating_2R_DIR.csv", "heating", 21.6, 30);
-    //TData *heatingData2 = new TData("data/fukary/heating_3R_DIR.csv", "heating", 21.6, 30);
-    //TData *heatingData3 = new TData("data/fukary/heating_2R_DAL.csv", "heating", 21.6, 30);
-    //TData *heatingData1 = new TData("data/fukary/F-DIR-2R-25cm-2vs3comp.csv", "heating", 21.6, 30);
-    //TData *heatingData2 = new TData("data/fukary/F-DIR-3R-25cm-2vs3comp.csv", "heating", 21.6, 30);
-    //TData *heatingData3 = new TData("data/fukary/F-DAL-2R-25cm-40uF-LM.csv", "heating", 21.6, 30);
-
-
-    //TData *coolingData = new TData("data/cooling.csv", "cooling", 21.6, 100);
-
-    drawHeatChart(heatingData1, "Without Dalyn");
-    //drawHeatChart(heatingData2, "With Dalyn");
-    //drawHeatChart(heatingData3, "Heating");
-    //drawCoolingChart(coolingData, "Cooling");
-    //drawCumulativeWinChart(heatingData);
+    // Params: TData var, Chart title
+    drawHeatChart(heatingData, "Heating");
+    drawCoolingChart(coolingData, "Cooling");
+    drawCumulativeWinChart(heatingData);
 }
