@@ -36,17 +36,17 @@ void drawHeatChart(TData *data, TString chartTitle) {
     Yrange[0] = gr->GetYaxis()->GetXmin();
     Yrange[1] = gr->GetYaxis()->GetXmax();
 
-    hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]); 
+    hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]);
     hset( *hfr, "Time [h:m]","Temp [deg]");
     splitCan->SetUpperFramePars(*hfr);
     hfr->Draw();
 
-    gr->SetMarkerStyle(33); 
-    gr->SetMarkerColor(4); 
-    gr->SetMarkerSize(1.2); 
+    gr->SetMarkerStyle(33);
+    gr->SetMarkerColor(4);
+    gr->SetMarkerSize(1.2);
     gr->Draw("PZ");
 
-    THeatFcn *ptrHeatFcn = new THeatFcn(5, 4000);
+    THeatFcn *ptrHeatFcn = new THeatFcn(150, 7000);
 
     TF1 *fHeat = new TF1("fheat", ptrHeatFcn, &THeatFcn::Evaluate, 
             ptrHeatFcn->GetFitRangeLow(), ptrHeatFcn->GetFitRangeHigh(), 4);
@@ -77,23 +77,28 @@ void drawHeatChart(TData *data, TString chartTitle) {
     MeanT      = fHeat->GetParameter(3);
     double Tmax = MeanT*log(kin/Qloss+1);
 
-    Qloss = fHeat->GetParameter(2);
     fHeat->SetParameter(2,0); // Pin
     fHeat->SetLineStyle(2);
     fHeat->DrawCopy("same");
 
-    cout << "Temp at 2h should be =" << fHeat->Eval(300) <<" deg" << endl;
-    cout << "Warmrate is " << fHeat->Eval(70) - fHeat->Eval(10) << " deg / min" << endl;
+    double lineTime[2]={1000,3600};
+    cout << "Temp should be =" << fHeat->Eval(1800) <<" deg" << endl;
+    cout << "Temp should be =" << fHeat->Eval(3600) <<" deg" << endl;
+    double linWarmRate = (fHeat->Eval(lineTime[1]) - fHeat->Eval(lineTime[0]))/(lineTime[1] - lineTime[0])*60.;
+    cout << "Warmrate is " << linWarmRate << " deg / min" << endl;
 
     fHeat->SetParameter(2,Qloss); // Pin
 
     leg = new TLegend(0.4,0.2,0.9,0.5," ","brNDC");
-    leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
+    leg->SetFillStyle(0);
+    leg->SetBorderSize(0);
+    leg->SetTextSize(0.04);
     leg->AddEntry(gr, "data","p");
     auto *faux = new TF1("faux", "x", 0,1);
     leg->AddEntry(faux, "model heating","l");
     leg->AddEntry(fHeat, "no loss heating","l");
     leg->AddEntry((TObject*)0, Form("Tmax (P_{in}=%1.2fkW) = %2.1f #circC", Pin, Tmax),"");
+    leg->AddEntry((TObject*)0, Form("NoLossWarmRate=%1.2f #circC/min", linWarmRate),"");
     leg->Draw(); 
 
     splitCan->PrintName(chartTitle);
@@ -204,7 +209,6 @@ void drawCumulativeWinChart(TData *data) {
     TH2F *hfr;
     TLegend *leg;
     TSplitCan *splitCan;
-
     splitCan = new TSplitCan(4,0);
 
     gr = data->chartWin;
@@ -219,18 +223,20 @@ void drawCumulativeWinChart(TData *data) {
     hfr->Draw();
 
     //-----------------
-    gr->SetMarkerStyle(33); 
-    gr->SetMarkerColor(4); 
-    gr->SetMarkerSize(1.2); 
+    gr->SetMarkerStyle(33);
+    gr->SetMarkerColor(4);
+    gr->SetMarkerSize(1.2);
     gr->SetLineColor(4);
 
-    gr->Fit("pol1");
+    //gr->Fit("pol1");
     gr->Draw("psame");
 
     leg = new TLegend(0.2,0.2,0.72,0.4," ","brNDC");
-    leg->SetFillStyle(0);leg->SetBorderSize(0);leg->SetTextSize(0.04);
+    leg->SetFillStyle(0);
+    leg->SetBorderSize(0);
+    leg->SetTextSize(0.04);
     leg->AddEntry((TObject*)0, Form("P_{in} = %3.2f kW", gr->GetFunction("pol1")->GetParameter(1)*3600 ),"p");
-    leg->Draw(); 
+    leg->Draw();
 }
 
 void model() {
