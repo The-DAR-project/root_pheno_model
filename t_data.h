@@ -6,10 +6,12 @@ class TData {
         TGraphErrors *chartHeatingReb;
         TGraphErrors *chartCoolingReb;
         TGraphErrors *chartWin;
+        double TAmbient;
 
         TData(TString fileName, TString dataType, double Tamb, int rebin) {
             double TemperError = 1.0;          // Estimate, needs more attention
             double WinError    = 0.1;
+            TAmbient = Tamb;
 
             ifstream myfile(fileName);
             if(myfile.fail()) {

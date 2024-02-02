@@ -75,7 +75,7 @@ void drawHeatChart(TData *data, TString chartTitle) {
     kin        = fHeat->GetParameter(1);
     Qloss      = fHeat->GetParameter(2);
     MeanT      = fHeat->GetParameter(3);
-    double Tmax = MeanT*log(kin/Qloss+1);
+    double Tmax = MeanT*log(kin/Qloss+1) + data->TAmbient;
 
     fHeat->SetParameter(2,0); // Pin
     fHeat->SetLineStyle(2);
