@@ -241,8 +241,10 @@ void drawCumulativeWinChart(TData *data) {
 
 void model() {
     // Params: fileName, dataType, Tamb, rebin
-    TData *heatingData = new TData("csv_data/509/heating.csv", "heating", 21.6, 30);
-    TData *coolingData = new TData("csv_data/509/cooling.csv", "cooling", 21.6, 100);
+    TData *heatingData = new TData("data/511/heating.csv", "heating", 21.6, 30);
+    TData *coolingData = new TData("data/511/cooling.csv", "cooling", 21.6, 100);
+
+    heatingData->DrawTemp();
 
     // Params: TData var, Chart title
     drawHeatChart(heatingData, "Heating");

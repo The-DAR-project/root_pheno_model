@@ -20,7 +20,13 @@ Command-line arguments are:
 ### Example of usage
 
 ```
-./parseCsv -i "../measurements/measurement_509.csv" -o "parsed_data.csv" -c "0, 1, 4" -ci 9999
+./parseCsv -i "../measurements/509/data.csv" -o "parsed_data.csv" -c "0, 1, 4" -ci 9999
+```
+
+Or
+
+```
+./parseCsv -i "../measurements/511/data.csv" -o "parsed_data.csv" -c "0, 1, 2"
 ```
 
 ## Split data
