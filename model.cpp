@@ -32,9 +32,11 @@ void drawHeatChart(TData *data, TString chartTitle) {
 
     gr = data->chartHeatingReb;
     Xrange[0] = 0*gr->GetXaxis()->GetXmin();
-    Xrange[1] = gr->GetXaxis()->GetXmax();
+    Xrange[1] = 3000;//gr->GetXaxis()->GetXmax();
     Yrange[0] = gr->GetYaxis()->GetXmin();
     Yrange[1] = gr->GetYaxis()->GetXmax();
+
+    cout << Xrange[1] << endl;
 
     hfr = new TH2F("hfr"," ", 10, Xrange[0], Xrange[1], 10, Yrange[0], Yrange[1]);
     hset( *hfr, "Time [h:m]","Temp [deg]");
@@ -53,7 +55,7 @@ void drawHeatChart(TData *data, TString chartTitle) {
 
 
     // Defines fit params "out of hand".
-    double timeOfst = 0;            // 0 time offset
+    double timeOfst = 250;            // 0 time offset
     double kin      = 1.73183e-2;   // 1 kin (heating = kin*Pin)
     double Qloss    = 4.96247e3;    // 2 Qloss
     double MeanT    = 2.223e7;      // 3 Spadova teplota
@@ -241,13 +243,13 @@ void drawCumulativeWinChart(TData *data) {
 
 void model() {
     // Params: fileName, dataType, Tamb, rebin
-    TData *heatingData = new TData("data/511/heating.csv", "heating", 21.6, 30);
-    TData *coolingData = new TData("data/511/cooling.csv", "cooling", 21.6, 100);
+    TData *heatingData = new TData("data/519/heating.csv", "heating", 21.6, 10);
+    //TData *coolingData = new TData("data/511/cooling.csv", "cooling", 21.6, 100);
 
     heatingData->DrawTemp();
 
     // Params: TData var, Chart title
-    drawHeatChart(heatingData, "Heating");
-    drawCoolingChart(coolingData, "Cooling");
-    drawCumulativeWinChart(heatingData);
+    drawHeatChart(heatingData, "Heating 519");
+    //drawCoolingChart(coolingData, "Cooling 519");
+    //drawCumulativeWinChart(heatingData);
 }
